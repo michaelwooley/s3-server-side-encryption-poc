@@ -1,1 +1,3 @@
 terraform.secrets.auto.tfvars.json
+*.tfstate.backup
+terraform.tfstate
