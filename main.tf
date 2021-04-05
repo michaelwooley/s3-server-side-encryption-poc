@@ -24,6 +24,7 @@ resource "aws_kms_key" "bucket_sse" {
 
 resource "aws_s3_bucket" "test_bucket" {
   bucket = var.bucket_name
+  acl = "private"
 
   server_side_encryption_configuration {
     rule {
@@ -34,3 +35,10 @@ resource "aws_s3_bucket" "test_bucket" {
     }
   }
 }
+
+resource "aws_s3_bucket_object" "examplebucket_object" {
+  key                    = "index.html"
+  bucket                 = aws_s3_bucket.test_bucket.id
+  source                 = "static/index.html"
+}
+
