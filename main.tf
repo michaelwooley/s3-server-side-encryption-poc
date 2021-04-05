@@ -10,8 +10,9 @@ terraform {
 }
 
 provider "aws" {
-  profile = "test-account"
-  region  = "us-east-1"
+  access_key = var.aws_access_key
+  secret_key = var.aws_secret_key
+  region     = var.aws_region
 }
 
 // https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/kms_key
@@ -21,9 +22,8 @@ resource "aws_kms_key" "bucket_sse" {
   enable_key_rotation     = true
 }
 
-resource "aws_s3_bucket" "b" {
+resource "aws_s3_bucket" "test_bucket" {
   bucket = var.bucket_name
-  acl    = "private"
 
   server_side_encryption_configuration {
     rule {
