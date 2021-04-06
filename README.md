@@ -1,7 +1,5 @@
 # POC: AWS S3 sse 
 
-## Notes
-
 - _Should still verify that this all works when we use a custom origin._
 - Reference modules:
   - [Using AES256](https://registry.terraform.io/modules/cloudposse/cloudfront-s3-cdn/aws/latest)
