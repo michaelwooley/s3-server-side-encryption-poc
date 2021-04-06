@@ -69,43 +69,42 @@ resource "aws_cloudfront_origin_access_identity" "sse_oai" {
 resource "aws_s3_bucket" "test_bucket" {
   bucket = var.bucket_name
 
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        kms_master_key_id = aws_kms_key.bucket_sse.arn
-        sse_algorithm     = "aws:kms"
-      }
-    }
-  }
+  // server_side_encryption_configuration {
+  //   rule {
+  //     apply_server_side_encryption_by_default {
+  //       kms_master_key_id = aws_kms_key.bucket_sse.arn
+  //       sse_algorithm     = "aws:kms"
+  //     }
+  //   }
+  // }
 }
 
 resource "aws_s3_bucket_object" "examplebucket_object" {
-  key    = "index.html"
-  bucket = aws_s3_bucket.test_bucket.id
-  source = "static/index.html"
+  key          = "index.html"
+  bucket       = aws_s3_bucket.test_bucket.id
+  source       = "static/index.html"
+  content_type = "html"
 }
 
-resource "aws_s3_bucket_policy" "b" {
+resource "aws_s3_bucket_policy" "test_bucket" {
   bucket = aws_s3_bucket.test_bucket.id
 
-  # Terraform's "jsonencode" function converts a
-  # Terraform expression's result to valid JSON syntax.
-  policy = <<POLICY
-{
-    "Version": "2012-10-17",
-    "Id": "PolicyForCloudFrontPrivateContent",
-    "Statement": [
+  policy = jsonencode(
+    {
+      Id = "PolicyForCloudFrontPrivateContent"
+      Statement = [
         {
-            "Effect": "Allow",
-            "Principal": {
-                "CanonicalUser": "${aws_cloudfront_origin_access_identity.sse_oai.s3_canonical_user_id}"
-            },
-            "Action": "s3:GetObject",
-            "Resource": "${aws_s3_bucket.test_bucket.arn}/*"
-        }
-    ]
-}
-POLICY
+          Action = "s3:GetObject"
+          Effect = "Allow"
+          Principal = {
+            CanonicalUser = [aws_cloudfront_origin_access_identity.sse_oai.s3_canonical_user_id]
+          }
+          Resource = "${aws_s3_bucket.test_bucket.arn}/*"
+        },
+      ]
+      Version = "2012-10-17"
+    }
+  )
 }
 
 resource "aws_cloudfront_distribution" "s3_distribution" {
@@ -141,7 +140,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
       query_string = false
 
       cookies {
-        forward = "none"
+        forward = "all"
       }
     }
   }
