@@ -10,13 +10,6 @@ variable "aws_region" {
   description = "AWS region"
 }
 
-variable "aws_account_id" {
-  type        = string
-  sensitive   = true
-  description = "AWS Saccount ID"
-}
-
-
 variable "aws_access_key" {
   type        = string
   sensitive   = true
