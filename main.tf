@@ -62,9 +62,12 @@ resource "aws_kms_key" "bucket_sse" {
 POLICY
 }
 
+resource "aws_cloudfront_origin_access_identity" "sse_oai" {
+  comment = "Access the bucket"
+}
+
 resource "aws_s3_bucket" "test_bucket" {
   bucket = var.bucket_name
-  acl    = "private"
 
   server_side_encryption_configuration {
     rule {
@@ -76,11 +79,33 @@ resource "aws_s3_bucket" "test_bucket" {
   }
 }
 
-
 resource "aws_s3_bucket_object" "examplebucket_object" {
   key    = "index.html"
   bucket = aws_s3_bucket.test_bucket.id
   source = "static/index.html"
+}
+
+resource "aws_s3_bucket_policy" "b" {
+  bucket = aws_s3_bucket.test_bucket.id
+
+  # Terraform's "jsonencode" function converts a
+  # Terraform expression's result to valid JSON syntax.
+  policy = <<POLICY
+{
+    "Version": "2012-10-17",
+    "Id": "PolicyForCloudFrontPrivateContent",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "CanonicalUser": "${aws_cloudfront_origin_access_identity.sse_oai.s3_canonical_user_id}"
+            },
+            "Action": "s3:GetObject",
+            "Resource": "${aws_s3_bucket.test_bucket.arn}/*"
+        }
+    ]
+}
+POLICY
 }
 
 resource "aws_cloudfront_distribution" "s3_distribution" {
@@ -89,16 +114,16 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
     origin_id   = "s3-${aws_s3_bucket.test_bucket.id}"
     origin_path = ""
 
-    custom_origin_config {
-      https_port             = 443
-      http_port              = 80
-      origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
-
-    // s3_origin_config {
-    // origin_access_identity = "origin-access-identity/cloudfront/ABCDEFG1234567"
+    // custom_origin_config {
+    //   https_port             = 443
+    //   http_port              = 80
+    //   origin_protocol_policy = "https-only"
+    //   origin_ssl_protocols   = ["TLSv1.2"]
     // }
+
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.sse_oai.cloudfront_access_identity_path
+    }
   }
 
   enabled         = true
