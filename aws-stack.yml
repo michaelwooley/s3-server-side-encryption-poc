@@ -1,0 +1,62 @@
+Resources:
+  S3Bucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Join
+        - "-"
+        - - !Ref "AWS::StackName"
+          - s3bucket
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  S3BucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Statement:
+          - Action:
+              - "s3:GetObject"
+            Effect: Allow
+            Resource: !Join
+              - ""
+              - - "arn:aws:s3:::"
+                - !Ref S3Bucket
+                - /*
+            Principal:
+              CanonicalUser:
+                Fn::GetAtt: [OAI, S3CanonicalUserId]
+
+  OAI:
+    Type: "AWS::CloudFront::CloudFrontOriginAccessIdentity"
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: Origin Access Identity for S3
+
+  Cloudfront:
+    Type: "AWS::CloudFront::Distribution"
+    Properties:
+      DistributionConfig:
+        Comment: How to serve content encrypted with SSE-S3 from S3 using CloudFront
+        Origins:
+          - DomainName: !Join
+              - .
+              - - !Ref S3Bucket
+                - s3
+                - !Ref "AWS::Region"
+                - amazonaws.com
+            Id: S3-regional-endpoint
+            S3OriginConfig:
+              OriginAccessIdentity: !Join
+                - /
+                - - origin-access-identity
+                  - cloudfront
+                  - !Ref OAI
+        DefaultCacheBehavior:
+          TargetOriginId: S3-regional-endpoint
+          ForwardedValues:
+            QueryString: "false"
+          ViewerProtocolPolicy: redirect-to-https
+        Enabled: "true"

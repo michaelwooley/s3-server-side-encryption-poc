@@ -9,6 +9,3 @@
 - Attempting to use a bucket-wide master key (i.e. do not create KMS key yourself) does not work.
 - [According to this doc](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingServerSideEncryption.html), no additional cost incurred to do this.  
 
-## AWS Credentials
-
-I am using the test account associated with `whoisnamecombo@gmail.com`.
